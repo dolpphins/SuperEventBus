@@ -1,0 +1,5 @@
+rootProject.name='SuperEventBusApp'
+include ':app'
+include ':supereventbus'
+include ':supereventbus-compiler'
+include ':supereventbus-common'
