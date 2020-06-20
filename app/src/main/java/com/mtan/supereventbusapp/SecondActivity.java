@@ -18,7 +18,9 @@ public class SecondActivity extends Activity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        long time = System.currentTimeMillis();
         SuperEventBus.getDefault().register(this);
+        Log.i(TAG, "register consume time:" + (System.currentTimeMillis() - time) + "ms");
     }
 
     @Subscribe(threadMode = ThreadMode.ASYNC)

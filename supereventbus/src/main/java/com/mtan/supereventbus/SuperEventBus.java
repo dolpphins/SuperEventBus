@@ -3,6 +3,7 @@ package com.mtan.supereventbus;
 import android.os.Handler;
 import android.os.Looper;
 
+import com.mtan.supereventbus.common.ISubscription;
 import com.mtan.supereventbus.common.Subscribe;
 import com.mtan.supereventbus.common.MethodInfo;
 import com.mtan.supereventbus.common.ThreadMode;
@@ -37,22 +38,32 @@ public class SuperEventBus {
     private Handler mMainHandler = new Handler(Looper.getMainLooper());
     private ExecutorService mAsyncExecutor = Executors.newCachedThreadPool();
 
+    private ISubscription mSubscriptionIndex;
+
     public synchronized void register(Object subscriber) {
-        Class<?> clazz = subscriber.getClass();
-        Method[] methods = clazz.getDeclaredMethods();
         Map<Class<?>, List<MethodInfo>> map = new HashMap<>();
-        for (Method method : methods) {
-            Subscribe annotation = method.getAnnotation(Subscribe.class);
-            if (annotation != null) {
-                Class<?> eventClazz = method.getParameterTypes()[0];
-                List<MethodInfo> list = map.get(eventClazz);
-                if (list == null) {
-                    list = new ArrayList<>();
-                    map.put(eventClazz, list);
+
+        if (mSubscriptionIndex != null) {
+            // index
+            map = mSubscriptionIndex.getMethodInfoMap();
+        } else {
+            // 反射
+            Class<?> clazz = subscriber.getClass();
+            Method[] methods = clazz.getDeclaredMethods();
+            for (Method method : methods) {
+                Subscribe annotation = method.getAnnotation(Subscribe.class);
+                if (annotation != null) {
+                    Class<?> eventClazz = method.getParameterTypes()[0];
+                    List<MethodInfo> list = map.get(eventClazz);
+                    if (list == null) {
+                        list = new ArrayList<>();
+                        map.put(eventClazz, list);
+                    }
+                    list.add(new MethodInfo(clazz, method.getName(), method, annotation.threadMode()));
                 }
-                list.add(new MethodInfo(method, annotation.threadMode()));
             }
         }
+
         for (Class<?> eventClazz : map.keySet()) {
             List<Subscription> list = mSubscribers.get(eventClazz);
             if (list == null) {
